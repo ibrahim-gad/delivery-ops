@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Delivery Ops",
+  "version": "1.0.0",
+  "description": "Chrome extension for copying delivery folders to Google Drive on eval.turing.com",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://eval.turing.com/*",
+    "https://swe-bench-plus.turing.com/*",
+    "https://www.googleapis.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://eval.turing.com/delivery/*/view/tasks"],
+      "js": ["drive-api.js", "content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "oauth2": {
+    "client_id": "917256818414-gv5r4aassg4pmi82857s379c56a6mqp3.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive",
+      "https://www.googleapis.com/auth/drive.file"
+    ]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["modal.html"],
+      "matches": ["https://eval.turing.com/*"]
+    }
+  ]
+} 

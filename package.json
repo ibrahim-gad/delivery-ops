@@ -1,0 +1,25 @@
+{
+  "name": "delivery-ops-chrome-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for copying delivery folders to Google Drive on eval.turing.com",
+  "main": "content.js",
+  "scripts": {
+    "build": "echo 'Extension files are ready for loading'",
+    "dev": "echo 'Load extension in Chrome Developer Mode'",
+    "test": "echo 'No tests available'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "google-drive",
+    "delivery-ops",
+    "turing"
+  ],
+  "author": "Delivery Ops Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/delivery-ops-extension.git"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+} 
