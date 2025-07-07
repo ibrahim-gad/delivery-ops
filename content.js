@@ -96,8 +96,8 @@ function createModal(batchId) {
           </div>
         </div>
         <div class="start-section" style="display: none;">
-          <button id="start-copy-btn" class="btn-start">Start Copy Process</button>
-          <p class="start-description">This will create a folder named "Delivery_Batch_${batchId}" in your Google Drive and copy all the above folders into it.</p>
+          <button id="start-copy-btn" class="btn-start">Start Parallel Copy Process</button>
+          <p class="start-description">⚡ This will create a folder named "Delivery_Batch_${batchId}" in your Google Drive and copy all folders using optimized parallel processing for maximum speed. The process runs in the background - you can even navigate away from this page!</p>
         </div>
         <div class="status-container" style="display: none;">
           <div class="status-item">
@@ -105,11 +105,11 @@ function createModal(batchId) {
             <span class="status-icon" id="auth-status">⏳</span>
           </div>
           <div class="status-item">
-            <span class="status-label">Creating batch folder...</span>
+            <span class="status-label">Creating batch folder & starting parallel jobs...</span>
             <span class="status-icon" id="folder-status">⏳</span>
           </div>
           <div class="status-item">
-            <span class="status-label">Copying delivery folders...</span>
+            <span class="status-label">⚡ Processing folders in parallel...</span>
             <span class="status-icon" id="copy-status">⏳</span>
           </div>
         </div>
@@ -276,8 +276,8 @@ async function startCopyProcess(batchId) {
   let batchFolderId = null;
 
   try {
-    addLogEntry('Starting copy process...');
-    updateProgress(10);
+    addLogEntry('🚀 Starting optimized parallel copy process...');
+    updateProgress(5);
 
     // Step 1: Get user token
     const userToken = getUserToken();
@@ -287,137 +287,64 @@ async function startCopyProcess(batchId) {
     
     addLogEntry('User token retrieved successfully');
     updateStatus('auth-status', 'success');
-    updateProgress(25);
+    updateProgress(10);
 
     // Step 2: Get Google Drive access token
     addLogEntry('Requesting Google Drive access...');
     const driveToken = await getGoogleDriveToken();
-    updateProgress(25);
-
+    
     // Step 2.5: Check which Google account we're using
     addLogEntry('Checking Google account info...');
     try {
       const accountInfo = await getUserInfo(driveToken);
-      addLogEntry(`Authenticated as: ${accountInfo.email}`, 'info');
+      addLogEntry(`✅ Authenticated as: ${accountInfo.email}`, 'info');
     } catch (error) {
       addLogEntry('Could not retrieve account info', 'error');
     }
 
-    // Step 3: Initialize Drive API
-    const driveAPI = new DriveAPI(driveToken);
-    addLogEntry('Google Drive API initialized');
-    updateProgress(30);
+    updateProgress(15);
 
-    // Step 4: Create batch folder
-    addLogEntry(`Creating folder for batch ${batchId}...`);
-    const batchFolder = await driveAPI.createFolder(`Delivery_Batch_${batchId}`);
-    batchFolderId = batchFolder.id; // Store the folder ID for later use
-    updateStatus('folder-status', 'success');
-    addLogEntry(`Batch folder created: ${batchFolder.name}`);
-    updateProgress(40);
-
-    // Step 5: Extract folder IDs from URLs
-    const sourceFolderIds = foldersToMigrate.map(url => extractFolderIdFromUrl(url));
-    addLogEntry(`Found ${sourceFolderIds.length} folders to copy`);
-    
-    // Step 5.5: Validate folder access
-    addLogEntry('Validating folder access...');
-    const validFolders = [];
-    const invalidFolders = [];
-    
-    for (let i = 0; i < sourceFolderIds.length; i++) {
-      const folderId = sourceFolderIds[i];
-      const folderUrl = foldersToMigrate[i];
-      
-      try {
-        const accessCheck = await driveAPI.checkFolderAccess(folderId);
-        if (accessCheck.hasAccess && accessCheck.folder) {
-          validFolders.push(folderId);
-          addLogEntry(`✓ Access confirmed: ${accessCheck.folder.name}`, 'success');
-        } else {
-          invalidFolders.push({ id: folderId, url: folderUrl, error: accessCheck.message });
-          addLogEntry(`✗ Cannot access folder: ${accessCheck.message}`, 'error');
-        }
-      } catch (error) {
-        invalidFolders.push({ id: folderId, url: folderUrl, error: error.message });
-        addLogEntry(`✗ Error checking folder: ${error.message}`, 'error');
-      }
-    }
-    
-    if (invalidFolders.length > 0) {
-      addLogEntry(`Warning: ${invalidFolders.length} folder(s) are not accessible and will be skipped`, 'error');
-    }
-    
-    if (validFolders.length === 0) {
-      throw new Error('No accessible folders found to copy');
-    }
-    
-    addLogEntry(`Proceeding with ${validFolders.length} accessible folder(s)`);
-
-    // Step 6: Copy folders using batch operation
-    addLogEntry('Starting to copy delivery folders...');
+    // Step 3: Start background parallel copy job
+    addLogEntry(`⚡ Starting parallel copy job for ${foldersToMigrate.length} folders...`);
+    updateStatus('folder-status', 'loading');
     updateStatus('copy-status', 'loading');
     
-    let completedFolders = 0;
-    const copyResults = await driveAPI.copyMultipleFolders(
-      validFolders, 
-      batchFolder.id,
-      (message, type) => {
-        addLogEntry(message, type || 'info');
-        
-        // Track completed folders for progress
-        if (type === 'success' && message.includes('Completed folder')) {
-          completedFolders++;
+    const jobResponse = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { 
+          action: 'startParallelCopy', 
+          batchId: batchId,
+          folders: foldersToMigrate,
+          driveToken: driveToken
+        },
+        (response) => {
+          if (response.success) {
+            resolve(response);
+          } else {
+            reject(new Error(response.error || 'Failed to start parallel copy job'));
+          }
         }
-        
-        // Update progress based on completed folders
-        const progress = 40 + (completedFolders / validFolders.length) * 55;
-        updateProgress(Math.min(progress, 95));
-      }
-    );
+      );
+    });
 
-    updateStatus('copy-status', 'success');
-    updateProgress(100);
+    const jobId = jobResponse.jobId;
+    addLogEntry(`📋 Copy job started (ID: ${jobId}). Processing in background with parallel operations...`);
     
-    // Final summary
-    const totalOriginal = sourceFolderIds.length;
-    const totalSkipped = invalidFolders.length;
+    // Job is now running in background - updates will come via messages
+    addLogEntry('🏃‍♂️ Copy job is running in the background. You can navigate away from this page if needed.');
     
-    addLogEntry(
-      `Copy completed! ${copyResults.completedFolders}/${validFolders.length} folders processed, ` +
-      `${copyResults.totalFiles} files, ${copyResults.totalSubfolders} subfolders copied.`,
-      'success'
-    );
-
-    if (totalSkipped > 0) {
-      addLogEntry(`Note: ${totalSkipped} of ${totalOriginal} folders were skipped due to access restrictions.`, 'info');
-    }
-
-    if (copyResults.errors.length > 0) {
-      addLogEntry(`${copyResults.errors.length} file/folder copy errors encountered (see details above).`, 'error');
-    }
-
   } catch (error) {
     console.error('Copy process failed:', error);
-    addLogEntry(`Error: ${error.message}`, 'error');
+    addLogEntry(`❌ Error: ${error.message}`, 'error');
     updateStatus('auth-status', 'error');
     updateStatus('folder-status', 'error');
     updateStatus('copy-status', 'error');
-  } finally {
-    // Reset copying state and re-enable modal closing
+    
+    // Reset copying state
     isCopyingInProgress = false;
     updateModalCloseState();
-    
-    // Create final message with link to the Google Drive folder
-    if (batchFolderId) {
-      const driveUrl = `https://drive.google.com/drive/folders/${batchFolderId}`;
-      const linkMessage = `Copy process finished. <a href="${driveUrl}" target="_blank" rel="noopener noreferrer" style="color: #63b3ed; text-decoration: underline;">Open the new Google Drive folder</a> or close this modal.`;
-      addLogEntry(linkMessage, 'success', true);
-    } else {
-      addLogEntry('Copy process finished. You can now close this modal.', 'info');
-    }
   }
-  }
+}
 
   // Get Google Drive access token
   async function getGoogleDriveToken() {
@@ -493,27 +420,68 @@ async function fetchDeliveryFolders(batchId) {
       );
     });
     
-    const deliverableFolders = response.folders;
+    const result = response.folders;
+    const successfulFolders = result.successfulFolders || [];
+    const failedTasks = result.failedTasks || [];
+    const totalTasks = result.totalTasks || 0;
     
     // Update UI with fetched folders
-    window.deliveryFolders = deliverableFolders.map(f => f.url);
+    window.deliveryFolders = successfulFolders.map(f => f.url);
     
     const foldersList = document.getElementById('folders-list');
     const foldersCount = document.getElementById('folders-count');
     
-    foldersList.innerHTML = deliverableFolders.map(folder => 
-      `<li>
-        <a href="${folder.url}" target="_blank">${folder.url}</a> 
-        <span class="verify-link">(click to verify access)</span>
-        <br><small><strong>Repo:</strong> ${folder.repo_id} | <strong>Instance:</strong> ${folder.instance_id}</small>
-      </li>`
-    ).join('');
+    // Build HTML for successful folders
+    let foldersHTML = '';
+    if (successfulFolders.length > 0) {
+      foldersHTML += '<div class="success-section">';
+      foldersHTML += '<h5>✅ Successfully Found Folders:</h5>';
+      foldersHTML += successfulFolders.map(folder => 
+        `<li>
+          <a href="${folder.url}" target="_blank">${folder.url}</a> 
+          <span class="verify-link">(click to verify access)</span>
+          <br><small><strong>Repo:</strong> ${folder.repo_id} | <strong>Instance:</strong> ${folder.instance_id}</small>
+        </li>`
+      ).join('');
+      foldersHTML += '</div>';
+    }
     
-    foldersCount.innerHTML = `<strong>Total folders to copy: ${deliverableFolders.length}</strong>`;
+    // Build HTML for failed tasks
+    if (failedTasks.length > 0) {
+      if (successfulFolders.length > 0) {
+        foldersHTML += '<hr class="section-divider">';
+      }
+      foldersHTML += '<div class="failed-section">';
+      foldersHTML += '<h5>❌ Failed to Get Drive Folders:</h5>';
+      foldersHTML += failedTasks.map(task => 
+        `<li class="failed-task-item">
+          <div><strong>Instance ID:</strong> ${task.instance_id || 'Unknown'}</div>
+          <div><strong>Repo ID:</strong> ${task.repo_id || 'Unknown'}</div>
+          <div class="task-reason"><strong>Reason:</strong> ${task.reason}</div>
+        </li>`
+      ).join('');
+      foldersHTML += '</div>';
+    }
     
-    // Show folders info and start section
+    foldersList.innerHTML = foldersHTML;
+    
+    // Update count with breakdown
+    let countHTML = `<strong>Total tasks analyzed: ${totalTasks}</strong><br>`;
+    countHTML += `<span class="success-count">✅ Folders to copy: ${successfulFolders.length}</span>`;
+    if (failedTasks.length > 0) {
+      countHTML += `<span class="failed-count">❌ Failed: ${failedTasks.length}</span>`;
+    }
+    
+    foldersCount.innerHTML = countHTML;
+    
+    // Show folders info and start section (only if we have successful folders)
     foldersInfo.style.display = 'block';
-    startSection.style.display = 'block';
+    if (successfulFolders.length > 0) {
+      startSection.style.display = 'block';
+    } else {
+      // Hide start section if no folders to copy
+      startSection.style.display = 'none';
+    }
     
     // Hide fetch section
     document.querySelector('.fetch-section').style.display = 'none';
@@ -531,6 +499,56 @@ async function fetchDeliveryFolders(batchId) {
 
 
 
+
+// Listen for updates from background script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'copyJobUpdate') {
+    handleCopyJobUpdate(message.jobId, message.update);
+  }
+});
+
+// Handle copy job updates from background script
+function handleCopyJobUpdate(jobId, update) {
+  if (update.message) {
+    addLogEntry(update.message, update.type || 'info');
+  }
+  
+  if (update.progress !== undefined) {
+    updateProgress(update.progress);
+  }
+  
+  if (update.status === 'copying') {
+    // Keep the copy status as loading during the process
+    updateStatus('copy-status', 'loading');
+  } else if (update.status === 'completed') {
+    updateStatus('folder-status', 'success');
+    updateStatus('copy-status', 'success');
+    updateProgress(100);
+    
+    // Reset copying state and re-enable modal closing
+    isCopyingInProgress = false;
+    updateModalCloseState();
+    
+    // Create final message with link to the Google Drive folder
+    if (update.batchFolderId) {
+      const driveUrl = `https://drive.google.com/drive/folders/${update.batchFolderId}`;
+      const linkMessage = `🎉 Copy process finished! <a href="${driveUrl}" target="_blank" rel="noopener noreferrer" style="color: #63b3ed; text-decoration: underline;">Open the new Google Drive folder</a> or close this modal.`;
+      addLogEntry(linkMessage, 'success', true);
+    } else {
+      addLogEntry('🎉 Copy process finished. You can now close this modal.', 'success');
+    }
+  } else if (update.status === 'failed') {
+    updateStatus('auth-status', 'error');
+    updateStatus('folder-status', 'error');
+    updateStatus('copy-status', 'error');
+    
+    // Reset copying state and re-enable modal closing
+    isCopyingInProgress = false;
+    updateModalCloseState();
+    
+    addLogEntry('❌ Copy process failed. You can now close this modal.', 'error');
+  }
+}
 
 // Initialize the extension
 function init() {

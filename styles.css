@@ -168,6 +168,70 @@
   font-style: italic;
 }
 
+.failed-task-item {
+  background-color: #2d3748 !important;
+  padding: 12px !important;
+  margin: 8px 0 !important;
+  border-left: 4px solid #fc8181 !important;
+  border-radius: 6px !important;
+  color: #e2e8f0 !important;
+}
+
+.failed-task-item div {
+  margin-bottom: 4px !important;
+}
+
+.failed-task-item .task-reason {
+  color: #fc8181 !important;
+  margin-top: 8px !important;
+  font-style: italic !important;
+  padding: 4px 8px !important;
+  background-color: rgba(248, 113, 113, 0.1) !important;
+  border-radius: 4px !important;
+}
+
+.success-section {
+  margin-bottom: 20px !important;
+}
+
+.success-section h5 {
+  color: #68d391 !important;
+  margin: 0 0 12px 0 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.failed-section h5 {
+  color: #fc8181 !important;
+  margin: 0 0 12px 0 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.section-divider {
+  border: none !important;
+  border-top: 2px solid #4a5568 !important;
+  margin: 20px 0 !important;
+  opacity: 0.6 !important;
+}
+
+.folders-count span {
+  font-weight: 600 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  margin: 0 4px !important;
+}
+
+.folders-count .success-count {
+  background-color: rgba(104, 211, 145, 0.2) !important;
+  color: #68d391 !important;
+}
+
+.folders-count .failed-count {
+  background-color: rgba(248, 113, 113, 0.2) !important;
+  color: #fc8181 !important;
+}
+
 .access-note {
   margin-top: 12px;
   padding: 12px;
@@ -230,7 +294,7 @@
 }
 
 .btn-start {
-  background: #48bb78;
+  background: linear-gradient(135deg, #48bb78, #38a169);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -238,14 +302,38 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   margin-bottom: 12px;
-  min-width: 180px;
+  min-width: 200px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.btn-start::before {
+  content: '⚡';
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  opacity: 0;
+  transition: all 0.3s ease;
 }
 
 .btn-start:hover {
-  background-color: #38a169;
-  box-shadow: 0 2px 8px rgba(72, 187, 120, 0.25);
+  background: linear-gradient(135deg, #38a169, #2f855a);
+  box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-start:hover::before {
+  left: 8px;
+  opacity: 1;
+}
+
+.btn-start:hover {
+  padding-left: 36px;
 }
 
 .btn-start:active {
