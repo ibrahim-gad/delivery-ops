@@ -67,6 +67,8 @@ async function getGoogleDriveAccessToken() {
 // Helper function to get and validate token
 async function getTokenWithValidation(interactive) {
   return new Promise((resolve, reject) => {
+    console.log(`Attempting to get token with interactive: ${interactive}`);
+    
     chrome.identity.getAuthToken(
       { 
         interactive: interactive,
@@ -77,27 +79,35 @@ async function getTokenWithValidation(interactive) {
       },
       async (token) => {
         if (chrome.runtime.lastError) {
+          console.error('Chrome identity API error:', chrome.runtime.lastError);
+          console.error('Full error details:', JSON.stringify(chrome.runtime.lastError, null, 2));
           reject(new Error(chrome.runtime.lastError.message));
           return;
         }
         
         if (!token) {
+          console.error('No token received from Chrome identity API');
           reject(new Error('No token received'));
           return;
         }
+        
+        console.log('Token received, validating...');
         
         // Validate the token by making a test API call
         try {
           const isValid = await validateToken(token);
           if (isValid) {
+            console.log('Token validation successful');
             resolve(token);
           } else {
+            console.error('Token validation failed');
             // Token is invalid, remove it from cache
             chrome.identity.removeCachedAuthToken({ token: token }, () => {
               reject(new Error('Token validation failed'));
             });
           }
         } catch (error) {
+          console.error('Token validation error:', error);
           // Token validation failed, remove it from cache
           chrome.identity.removeCachedAuthToken({ token: token }, () => {
             reject(new Error(`Token validation error: ${error.message}`));

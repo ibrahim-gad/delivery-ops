@@ -3,6 +3,7 @@
   "name": "Delivery Ops",
   "version": "1.0.0",
   "description": "Chrome extension for copying delivery folders to Google Drive on eval.turing.com",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAraxH4Rb51i8o3yWDqLHAor1nP1ULUNbMq5gOtT6vfczai57Xd4PzHLa9MK7ED9z2YOk3NVK9JfWouK+ycuvTCFHLdSlrtCdxs8h5AMH0uIy79QpWnoaehjVjKyV15OiZ6KN/PYZE7TWyDhoOf6QYTFVTcILhRbZG4fdASaICo4YvyxIJeV9ORpzDXhCeTd9LEMTjPC7w6RM7MbZwFQG0s2QZllypJfUTngO4OGjlva2lJQ09/vqwuH5C60p4Clg1uoLFjLDLKRYHosVE1iuuyvPLq2Rz5jJjLNwEE0tA3SFNREOAhuxJaS3xRP8nfVrnW3nVF/2aY/5+tNvqH36L3wIDAQAB",
   "permissions": [
     "storage",
     "activeTab",
