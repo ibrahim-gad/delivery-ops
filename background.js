@@ -781,7 +781,7 @@ async function fetchDeliveryFoldersBackground(batchId, userToken) {
       }
     } else {
       invalidTasks.push({
-        taskId: item.id || 'unknown',
+        taskId: item.task.id || 'unknown',
         reason: 'Task missing statement data'
       });
     }

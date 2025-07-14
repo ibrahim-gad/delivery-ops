@@ -455,6 +455,7 @@ async function fetchDeliveryFolders(batchId) {
       foldersHTML += '<h5>❌ Failed to Get Drive Folders:</h5>';
       foldersHTML += failedTasks.map(task => 
         `<li class="failed-task-item">
+          <div><strong>Task ID:</strong> ${task.taskId || 'Unknown'}</div>
           <div><strong>Instance ID:</strong> ${task.instance_id || 'Unknown'}</div>
           <div><strong>Repo ID:</strong> ${task.repo_id || 'Unknown'}</div>
           <div class="task-reason"><strong>Reason:</strong> ${task.reason}</div>
